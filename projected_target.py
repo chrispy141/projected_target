@@ -3,12 +3,13 @@
 import cv2 as cv
 import numpy as np
 import time
-
+import sys
 
 THRESHOLD = 1000
 #create a mask for green colour using inRange function
 
 #read the image
+camNum = int(sys.argv[1])
 cap = cv.VideoCapture(0)
 hits = []
 
@@ -32,7 +33,6 @@ def start_calibration():
         #convert the BGR image to HSV colour space
         hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
     
-    
         mask = cv.inRange(hsv, lower_red, upper_red)
     
         masked = cv.bitwise_and(cal, cal, mask=mask)
@@ -44,7 +44,7 @@ def start_calibration():
     
         cv.namedWindow("Calibration", cv.WINDOW_NORMAL)
     
-        cv.setWindowProperty("Calibration", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
+#        cv.setWindowProperty("Calibration", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
         cv.imshow("Calibration",masked)
         if cv.waitKey(1) & 0xFF == ord('c'):
             break
@@ -113,7 +113,7 @@ def start_target():
                 cv.circle(proj, hit, 20, (0, 255, 0), 2, cv.LINE_AA)
 
         cv.namedWindow("Target", cv.WINDOW_NORMAL)
-        cv.setWindowProperty("Target", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
+       # cv.setWindowProperty("Target", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
         cv.imshow('Target', proj)
 
         if cv.waitKey(1) & 0xFF == ord('q'):
