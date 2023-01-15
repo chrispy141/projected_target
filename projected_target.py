@@ -60,36 +60,35 @@ def start_calibration():
         keyOrd = cv.waitKey(1)
         if keyOrd > 0:
             key = chr(keyOrd)
-            match key: 
-                case 'c':
-                    break
-                case '+':
-                    imgzoom = imgzoom + (0.01 * multiplier)
-                    multiplier = 1
-                case '-':
-                    imgzoom = imgzoom - (0.01 * multiplier)
-                    multiplier = 1
-                case '3':
-                    hstretch = hstretch + (0.01 * multiplier)
-                    multiplier = 1
-                case '1':
-                    hstretch = hstretch - (0.01 * multiplier)
-                    multiplier = 1
-                case '8':
-                    yshift = yshift + (1 * multiplier)
-                    multiplier = 1
-                case '2':
-                    yshift = yshift - (1 * multiplier)
-                    multiplier = 1
-                case '6':
-                    xshift = xshift + (1 * multiplier)
-                    multiplier = 1
-                case '4':
-                    xshift = xshift - (1 * multiplier)
-                    multiplier = 1
-                case '*':
-                    multiplier = 10
-    
+            if key == 'c':
+                break
+            if key == '+':
+                imgzoom = imgzoom + (0.01 * multiplier)
+                multiplier = 1
+            if key == '-':
+                imgzoom = imgzoom - (0.01 * multiplier)
+                multiplier = 1
+            if key == '3':
+                hstretch = hstretch + (0.01 * multiplier)
+                multiplier = 1
+            if key == '1':
+                hstretch = hstretch - (0.01 * multiplier)
+                multiplier = 1
+            if key == '8':
+                yshift = yshift + (1 * multiplier)
+                multiplier = 1
+            if key == '2':
+                yshift = yshift - (1 * multiplier)
+                multiplier = 1
+            if key == '6':
+                xshift = xshift + (1 * multiplier)
+                multiplier = 1
+            if key == '4':
+                xshift = xshift - (1 * multiplier)
+                multiplier = 1
+            if key == '*':
+                multiplier = 10
+   
     cv.destroyAllWindows()
     
 def find_center(img):
@@ -169,12 +168,11 @@ def start_target():
         if keyOrd > 0:
             key = chr(keyOrd)
 
-        match key:
-            case 'q':
-                break
-            case 'c':
-                hits.clear()
-                print("hits cleared")
+        if key == 'q':
+            break
+        if key == 'c':
+            hits.clear()
+            print("hits cleared")
 
     cap.release()
     cv.destroyAllWindows()
