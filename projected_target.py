@@ -4,19 +4,23 @@ import cv2 as cv
 import numpy as np
 import time
 import sys
+import yaml
 
 THRESHOLD = 1000
 #create a mask for green colour using inRange function
 
 #read the image
-imgzoom = 1
-vstretch = 1
-hstretch = 1
-xshift = 0
-yshift = 0
+calibration = {}
+calibration["imgzoom"] = 1
+calibration["hstretch"] = 1
+calibration["xshift"] = 0
+calibration["yshift"] = 0
+calibration["hit_radius"] = 5
+
 camNum = int(sys.argv[1])
 cap = cv.VideoCapture(camNum)
 hits = []
+thits = []
 #set the lower and upper bounds for the green hue
 lower_red = np.array([0,95,95])
 upper_red = np.array([10,255,255])
@@ -24,13 +28,9 @@ upper_red = np.array([10,255,255])
 def start_calibration():
     multiplier = 1
     while True:
-        global imgzoom
-        global hstretch
-        global vstretch
-        global xshift
-        global yshift
+        global calibration
         ret, img = cap.read()
-        img = zoom_at (img, imgzoom) 
+        img = apply_zoom (img) 
         img = reshape (img) 
         dimen = img.shape
         height = dimen[0]
@@ -52,7 +52,8 @@ def start_calibration():
     
         for i in range(6):
             cv.circle(masked, center , int(i * radius), (0, 0, 255), 2, cv.LINE_AA)
-    
+        #draw sample hit at bullseye 
+        cv.circle(masked, center, calibration["hit_radius"], (0, 255, 0), 2, cv.LINE_AA)
         cv.namedWindow("Calibration", cv.WINDOW_NORMAL)
     
 #        cv.setWindowProperty("Calibration", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
@@ -63,31 +64,51 @@ def start_calibration():
             if key == 'c':
                 break
             if key == '+':
-                imgzoom = imgzoom + (0.01 * multiplier)
+                calibration["imgzoom"] = calibration["imgzoom"] + (0.01 * multiplier)
                 multiplier = 1
             if key == '-':
-                imgzoom = imgzoom - (0.01 * multiplier)
+                calibration["imgzoom"] = calibration["imgzoom"] - (0.01 * multiplier)
                 multiplier = 1
             if key == '3':
-                hstretch = hstretch + (0.01 * multiplier)
+                calibration["hstretch"] = calibration["hstretch"]+ (0.01 * multiplier)
                 multiplier = 1
             if key == '1':
-                hstretch = hstretch - (0.01 * multiplier)
+                calibration["hstretch"] = calibration["hstretch"]- (0.01 * multiplier)
                 multiplier = 1
             if key == '8':
-                yshift = yshift + (1 * multiplier)
+                calibration["yshift"] = calibration["yshift"] + (1 * multiplier)
                 multiplier = 1
             if key == '2':
-                yshift = yshift - (1 * multiplier)
+                calibration["yshift"] = calibration["yshift"] - (1 * multiplier)
                 multiplier = 1
             if key == '6':
-                xshift = xshift + (1 * multiplier)
+                calibration["xshift"] = calibration["xshift"] + (1 * multiplier)
                 multiplier = 1
             if key == '4':
-                xshift = xshift - (1 * multiplier)
+                calibration["xshift"] = calibration["xshift"] - (1 * multiplier)
+                multiplier = 1
+            if key == '9':
+                calibration["hit_radius"] = calibration["hit_radius"] + (1 * multiplier)
+                multiplier = 1
+            if key == '7':
+                calibration["hit_radius"] = calibration["hit_radius"] - (1 * multiplier)
                 multiplier = 1
             if key == '*':
                 multiplier = 10
+            if key == 's':
+                save_calibration()
+            if key == 'l':
+                load_calibration()
+   
+    cv.destroyAllWindows()
+    
+def find_center(img):
+
+    # convert the image to grayscale
+    gray_image = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+ 
+    # convert the grayscale image to binary image
+    ret,thresh = cv.threshold(gray_image,127,255,0)
    
     cv.destroyAllWindows()
     
@@ -113,16 +134,12 @@ def find_center(img):
     
 def start_target():
     lastHitTime = time.time()
-    global imgzoom
-    global hstretch
-    global vstretch
-    global xshift
-    global yshift
+    global calibration
     while True:
 
         # Take each frame
         ret, frame = cap.read()
-        frame = zoom_at (frame, imgzoom) 
+        frame = apply_zoom (frame) 
         frame = reshape(frame)
 
         # get dimensions
@@ -131,7 +148,6 @@ def start_target():
         length = dimen[1]
         center = ( int(length / 2), int(height / 2))
         radius = dimen[0] / 12
-    
 
         hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
 
@@ -142,12 +158,9 @@ def start_target():
         maxLoc = find_center(masked)
         if maxLoc is not None:
 
-
-            print(f'center of mass: {maxLoc}')         
-            if ( (time.time() - lastHitTime) > 1 ) and (maxLoc not in hits):
-                print(f"New Hit {maxLoc}")
-
+           if ( (time.time() - lastHitTime) > 1 ) and (maxLoc not in hits):
                 hits.append(maxLoc)
+                print(maxLoc)
                 lastHitTime = time.time()
        
         proj = np.zeros((height,length,3), dtype=np.uint8)
@@ -157,7 +170,7 @@ def start_target():
         #Draw Hits 
         for hit in hits:
             if hit != (0, 0):
-                cv.circle(proj, hit, 20, (0, 255, 0), 2, cv.LINE_AA)
+                cv.circle(proj, hit, calibration["hit_radius"], (0, 255, 0), 2, cv.LINE_AA)
 
         cv.namedWindow("Target", cv.WINDOW_NORMAL)
        # cv.setWindowProperty("Target", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
@@ -177,43 +190,52 @@ def start_target():
     cap.release()
     cv.destroyAllWindows()
 
-def zoom_at(img, zoom=1, angle=0, coord=None):
-    global imgzoom
+def apply_zoom(img, angle=0, coord=None):
+    global calibration
     cy, cx = [ i/2 for i in img.shape[:-1] ] if coord is None else coord[::-1]
 
-    rot_mat = cv.getRotationMatrix2D((cx,cy), angle, imgzoom)
+    rot_mat = cv.getRotationMatrix2D((cx,cy), angle, calibration["imgzoom"])
     result = cv.warpAffine(img, rot_mat, img.shape[1::-1], flags=cv.INTER_LINEAR)
     return result
+
 def reshape(img):
     
-    global hstretch
-    global xshift
-    global yshift
+    global calibration
     imgWidth = img.shape[1]
     imgHeight = img.shape[0]
-    newWidth = int(imgWidth  * hstretch)
+    newWidth = int(imgWidth  * calibration["hstretch"])
     newImg = cv.resize(img, (newWidth,imgHeight), interpolation = cv.INTER_AREA)
     # if stretching, need to crop
-    if hstretch > 1:
+    if calibration["hstretch"] > 1:
         start = int((newWidth - imgWidth) / 2)
         stop = int(newWidth - start)
         newImg = newImg[0:imgHeight, start:stop]#, 0:imgHeight]
-    if hstretch < 1:
+    if calibration["hstretch"] < 1:
         padding = int((imgWidth - newWidth) / 2)
         newImg = cv.copyMakeBorder(newImg, 0, 0, padding, padding, cv.BORDER_CONSTANT)
-    if xshift > 0:
-        newImg = cv.copyMakeBorder(newImg, 0, 0, abs(xshift), 0, cv.BORDER_CONSTANT)
+    if calibration["xshift"] > 0:
+        newImg = cv.copyMakeBorder(newImg, 0, 0, abs(calibration["xshift"]), 0, cv.BORDER_CONSTANT)
         newImg = newImg[0:imgHeight, 0:imgWidth]#, 0:imgHeight]
-    if xshift < 0:
-        newImg = cv.copyMakeBorder(newImg, 0, 0, 0, abs(xshift), cv.BORDER_CONSTANT)
-        newImg = newImg[0:imgHeight, abs(xshift):imgWidth+abs(xshift)]#, 0:imgHeight]
-    if yshift > 0:
-        newImg = cv.copyMakeBorder(newImg, 0, abs(yshift), 0, 0, cv.BORDER_CONSTANT)
-        newImg = newImg[abs(yshift):imgHeight+abs(yshift), 0:imgWidth]#, 0:imgHeight]
-    if yshift < 0:
-        newImg = cv.copyMakeBorder(newImg, abs(yshift), 0, 0, 0, cv.BORDER_CONSTANT)
+    if calibration["xshift"] < 0:
+        newImg = cv.copyMakeBorder(newImg, 0, 0, 0, abs(calibration["xshift"]), cv.BORDER_CONSTANT)
+        newImg = newImg[0:imgHeight, abs(calibration["xshift"]):imgWidth+abs(calibration["xshift"])]#, 0:imgHeight]
+    if calibration["yshift"] > 0:
+        newImg = cv.copyMakeBorder(newImg, 0, abs(calibration["yshift"]), 0, 0, cv.BORDER_CONSTANT)
+        newImg = newImg[abs(calibration["yshift"]):imgHeight+abs(calibration["yshift"]), 0:imgWidth]#, 0:imgHeight]
+    if calibration["yshift"] < 0:
+        newImg = cv.copyMakeBorder(newImg, abs(calibration["yshift"]), 0, 0, 0, cv.BORDER_CONSTANT)
         newImg = newImg[0:imgHeight, 0:imgWidth]#, 0:imgHeight]
 
     return newImg
+def save_calibration():
+    global calibration
+    with open("calibration_data.yaml", 'w') as caldata:
+        yaml.dump(calibration, caldata)
+def load_calibration():
+    global calibration
+    with open("calibration_data.yaml", 'r') as caldata:
+        calibration = yaml.safe_load(caldata)
+    print("Loaded calibration data")
+
 start_calibration()
 start_target()
