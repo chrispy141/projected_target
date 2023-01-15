@@ -10,6 +10,10 @@ THRESHOLD = 1000
 
 #read the image
 imgzoom = 1
+vstretch = 1
+hstretch = 1
+xshift = 0
+yshift = 0
 camNum = int(sys.argv[1])
 cap = cv.VideoCapture(camNum)
 hits = []
@@ -18,10 +22,16 @@ lower_red = np.array([0,95,95])
 upper_red = np.array([10,255,255])
 
 def start_calibration():
+    multiplier = 1
     while True:
         global imgzoom
+        global hstretch
+        global vstretch
+        global xshift
+        global yshift
         ret, img = cap.read()
         img = zoom_at (img, imgzoom) 
+        img = reshape (img) 
         dimen = img.shape
         height = dimen[0]
         length = dimen[1]
@@ -47,22 +57,38 @@ def start_calibration():
     
 #        cv.setWindowProperty("Calibration", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
         cv.imshow("Calibration",masked)
-        key = cv.waitKey(1)
-        
-        if key == ord('c'):
-            break
-        if key == ord('='):
-            print(f'zoom in: {imgzoom}')
-            imgzoom = imgzoom + 0.01
-        if key == ord('-'):
-            print(f'zoom out: {imgzoom}')
-            imgzoom = imgzoom - 0.01
-        if key == ord('+'):
-            print(f'zoom in: {imgzoom}')
-            imgzoom = imgzoom + 0.1
-        if key == ord('_'):
-            print(f'zoom out: {imgzoom}')
-            imgzoom = imgzoom - 0.1
+        keyOrd = cv.waitKey(1)
+        if keyOrd > 0:
+            key = chr(keyOrd)
+            match key: 
+                case 'c':
+                    break
+                case '+':
+                    imgzoom = imgzoom + (0.01 * multiplier)
+                    multiplier = 1
+                case '-':
+                    imgzoom = imgzoom - (0.01 * multiplier)
+                    multiplier = 1
+                case '3':
+                    hstretch = hstretch + (0.01 * multiplier)
+                    multiplier = 1
+                case '1':
+                    hstretch = hstretch - (0.01 * multiplier)
+                    multiplier = 1
+                case '8':
+                    yshift = yshift + (1 * multiplier)
+                    multiplier = 1
+                case '2':
+                    yshift = yshift - (1 * multiplier)
+                    multiplier = 1
+                case '6':
+                    xshift = xshift + (1 * multiplier)
+                    multiplier = 1
+                case '4':
+                    xshift = xshift - (1 * multiplier)
+                    multiplier = 1
+                case '*':
+                    multiplier = 10
     
     cv.destroyAllWindows()
     
@@ -89,12 +115,17 @@ def find_center(img):
 def start_target():
     lastHitTime = time.time()
     global imgzoom
+    global hstretch
+    global vstretch
+    global xshift
+    global yshift
     while True:
 
         # Take each frame
         ret, frame = cap.read()
         frame = zoom_at (frame, imgzoom) 
- 
+        frame = reshape(frame)
+
         # get dimensions
         dimen = frame.shape
         height = dimen[0]
@@ -133,23 +164,58 @@ def start_target():
        # cv.setWindowProperty("Target", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
         cv.imshow('Target', proj)
 
-        key = cv.waitKey(1)
-        if key == ord('q'):
-            break
-        if key == ord('c'):
-            hits.clear()
-            print("hits cleared")
+        keyOrd = cv.waitKey(1)
+        key = ''
+        if keyOrd > 0:
+            key = chr(keyOrd)
+
+        match key:
+            case 'q':
+                break
+            case 'c':
+                hits.clear()
+                print("hits cleared")
 
     cap.release()
     cv.destroyAllWindows()
 
 def zoom_at(img, zoom=1, angle=0, coord=None):
-
+    global imgzoom
     cy, cx = [ i/2 for i in img.shape[:-1] ] if coord is None else coord[::-1]
 
-    rot_mat = cv.getRotationMatrix2D((cx,cy), angle, zoom)
+    rot_mat = cv.getRotationMatrix2D((cx,cy), angle, imgzoom)
     result = cv.warpAffine(img, rot_mat, img.shape[1::-1], flags=cv.INTER_LINEAR)
     return result
+def reshape(img):
+    
+    global hstretch
+    global xshift
+    global yshift
+    imgWidth = img.shape[1]
+    imgHeight = img.shape[0]
+    newWidth = int(imgWidth  * hstretch)
+    newImg = cv.resize(img, (newWidth,imgHeight), interpolation = cv.INTER_AREA)
+    # if stretching, need to crop
+    if hstretch > 1:
+        start = int((newWidth - imgWidth) / 2)
+        stop = int(newWidth - start)
+        newImg = newImg[0:imgHeight, start:stop]#, 0:imgHeight]
+    if hstretch < 1:
+        padding = int((imgWidth - newWidth) / 2)
+        newImg = cv.copyMakeBorder(newImg, 0, 0, padding, padding, cv.BORDER_CONSTANT)
+    if xshift > 0:
+        newImg = cv.copyMakeBorder(newImg, 0, 0, abs(xshift), 0, cv.BORDER_CONSTANT)
+        newImg = newImg[0:imgHeight, 0:imgWidth]#, 0:imgHeight]
+    if xshift < 0:
+        newImg = cv.copyMakeBorder(newImg, 0, 0, 0, abs(xshift), cv.BORDER_CONSTANT)
+        newImg = newImg[0:imgHeight, abs(xshift):imgWidth+abs(xshift)]#, 0:imgHeight]
+    if yshift > 0:
+        newImg = cv.copyMakeBorder(newImg, 0, abs(yshift), 0, 0, cv.BORDER_CONSTANT)
+        newImg = newImg[abs(yshift):imgHeight+abs(yshift), 0:imgWidth]#, 0:imgHeight]
+    if yshift < 0:
+        newImg = cv.copyMakeBorder(newImg, abs(yshift), 0, 0, 0, cv.BORDER_CONSTANT)
+        newImg = newImg[0:imgHeight, 0:imgWidth]#, 0:imgHeight]
 
+    return newImg
 start_calibration()
 start_target()
