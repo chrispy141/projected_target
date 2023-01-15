@@ -9,18 +9,19 @@ THRESHOLD = 1000
 #create a mask for green colour using inRange function
 
 #read the image
+imgzoom = 1
 camNum = int(sys.argv[1])
-cap = cv.VideoCapture(0)
+cap = cv.VideoCapture(camNum)
 hits = []
-
 #set the lower and upper bounds for the green hue
 lower_red = np.array([0,95,95])
 upper_red = np.array([10,255,255])
 
 def start_calibration():
     while True:
+        global imgzoom
         ret, img = cap.read()
-    
+        img = zoom_at (img, imgzoom) 
         dimen = img.shape
         height = dimen[0]
         length = dimen[1]
@@ -46,8 +47,22 @@ def start_calibration():
     
 #        cv.setWindowProperty("Calibration", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
         cv.imshow("Calibration",masked)
-        if cv.waitKey(1) & 0xFF == ord('c'):
+        key = cv.waitKey(1)
+        
+        if key == ord('c'):
             break
+        if key == ord('='):
+            print(f'zoom in: {imgzoom}')
+            imgzoom = imgzoom + 0.01
+        if key == ord('-'):
+            print(f'zoom out: {imgzoom}')
+            imgzoom = imgzoom - 0.01
+        if key == ord('+'):
+            print(f'zoom in: {imgzoom}')
+            imgzoom = imgzoom + 0.1
+        if key == ord('_'):
+            print(f'zoom out: {imgzoom}')
+            imgzoom = imgzoom - 0.1
     
     cv.destroyAllWindows()
     
@@ -73,10 +88,12 @@ def find_center(img):
     
 def start_target():
     lastHitTime = time.time()
+    global imgzoom
     while True:
 
         # Take each frame
         ret, frame = cap.read()
+        frame = zoom_at (frame, imgzoom) 
  
         # get dimensions
         dimen = frame.shape
@@ -116,14 +133,23 @@ def start_target():
        # cv.setWindowProperty("Target", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
         cv.imshow('Target', proj)
 
-        if cv.waitKey(1) & 0xFF == ord('q'):
+        key = cv.waitKey(1)
+        if key == ord('q'):
             break
-        if cv.waitKey(1) & 0xFF == ord('c'):
+        if key == ord('c'):
             hits.clear()
             print("hits cleared")
 
     cap.release()
     cv.destroyAllWindows()
+
+def zoom_at(img, zoom=1, angle=0, coord=None):
+
+    cy, cx = [ i/2 for i in img.shape[:-1] ] if coord is None else coord[::-1]
+
+    rot_mat = cv.getRotationMatrix2D((cx,cy), angle, zoom)
+    result = cv.warpAffine(img, rot_mat, img.shape[1::-1], flags=cv.INTER_LINEAR)
+    return result
 
 start_calibration()
 start_target()
