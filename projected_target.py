@@ -218,7 +218,7 @@ def start_target():
                     update = True
                 else:
                     print("Duplicate Hit")
-            else:s
+            else:
                 print("Hit too soon")
         if (update):
             update = False 
@@ -251,6 +251,12 @@ def start_target():
             hits.clear()
             update = True
             print("hits cleared")
+        if key == '+':
+            THRESHOLD = THRESHOLD - 10
+            print("Sensitivity increased")
+        if key == '-':
+            THRESHOLD = THRESHOLD + 10
+            print("Sensitivity decreased")
         time.sleep(0.05)
     cap.release()
     cv.destroyAllWindows()
