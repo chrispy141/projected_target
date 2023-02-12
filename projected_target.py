@@ -148,7 +148,7 @@ def start_calibration():
                 print(f'{upper_red}')
                 print(f'{lower_red}')
 
-        sleep(0.05)
+        time.sleep(0.05)
                 
    
     cv.destroyAllWindows()
@@ -240,7 +240,7 @@ def start_target():
         if key == 'c':
             hits.clear()
             print("hits cleared")
-        sleep(0.05)
+        time.sleep(0.05)
     cap.release()
     cv.destroyAllWindows()
 
