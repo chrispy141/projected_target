@@ -186,6 +186,7 @@ def find_center(img):
 def start_target():
     lastHitTime = time.time()
     global calibration
+    update = True
     while True:
 
         # Take each frame
@@ -209,23 +210,32 @@ def start_target():
         maxLoc = find_center(masked)
         if maxLoc is not None:
 
-           if ( (time.time() - lastHitTime) > 1 ) and (maxLoc not in hits):
-                hits.append(maxLoc)
-                print(maxLoc)
-                lastHitTime = time.time()
-       
-        proj = np.zeros((height,length,3), dtype=np.uint8)
-        #Draw Target 
-        for i in range(6):
-            cv.circle(proj, center , int(i * radius), (255, 255, 255), 2, cv.LINE_AA)
-        #Draw Hits 
-        for hit in hits:
-            if hit != (0, 0):
-                cv.circle(proj, hit, calibration["hit_radius"], (0, 255, 0), 2, cv.LINE_AA)
+            if ( (time.time() - lastHitTime) > 1 )
+                if (maxLoc not in hits):
+                    hits.append(maxLoc)
+                    print(maxLoc)
+                    lastHitTime = time.time()
+                    update = True
+                else:
+                    print("Duplicate Hit")
+            else:s
+                print("Hit too soon")
+        if (update):
+            update = False 
+            proj = np.zeros((height,length,3), dtype=np.uint8)
+        
+            #Draw Target 
+            for i in range(6):
+                cv.circle(proj, center , int(i * radius), (255, 255, 255), 2, cv.LINE_AA)
+            #Draw Hits 
+            for hit in hits:
+                if hit != (0, 0):
+                    cv.circle(proj, hit, calibration["hit_radius"], (0, 255, 0), 2, cv.LINE_AA)
 
-        cv.namedWindow("Target", cv.WINDOW_NORMAL)
-       # cv.setWindowProperty("Target", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
-        cv.imshow('Target', proj)
+
+            cv.namedWindow("Target", cv.WINDOW_NORMAL)
+           # cv.setWindowProperty("Target", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
+            cv.imshow('Target', proj)
 
         keyOrd = cv.waitKey(1)
         key = ''
