@@ -6,7 +6,7 @@ import time
 import sys
 import yaml
 
-THRESHOLD = 500
+threshold = 500
 #create a mask for green colour using inRange function
 
 #read the image
@@ -176,7 +176,7 @@ def find_center(img):
     M = cv.moments(thresh)
 
     # calculate x,y coordinate of center
-    if M["m00"] > THRESHOLD:
+    if M["m00"] > threshold:
         cX = int(M["m10"] / M["m00"])
         cY = int(M["m01"] / M["m00"])
         return (cX, cY) 
@@ -186,6 +186,7 @@ def find_center(img):
 def start_target():
     lastHitTime = time.time()
     global calibration
+    global threshold 
     update = True
     while True:
 
@@ -252,10 +253,10 @@ def start_target():
             update = True
             print("hits cleared")
         if key == '+':
-            THRESHOLD = THRESHOLD - 10
+            threshold = threshold - 10
             print("Sensitivity increased")
         if key == '-':
-            THRESHOLD = THRESHOLD + 10
+            threshold = threshold + 10
             print("Sensitivity decreased")
         time.sleep(0.05)
     cap.release()
