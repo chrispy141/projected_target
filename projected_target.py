@@ -146,7 +146,9 @@ def start_calibration():
             if key == 'k':
                 lower_red[2] = lower_red[2] - 1
                 print(f'{upper_red}')
+                print(f'{lower_red}')
 
+        sleep(0.05)
                 
    
     cv.destroyAllWindows()
@@ -230,12 +232,15 @@ def start_target():
         if keyOrd > 0:
             key = chr(keyOrd)
 
-        if key == 'q':
+        if key == 'q':=
+            print(f'{upper_red}')
+            print(f'{lower_red}')
+
             break
         if key == 'c':
             hits.clear()
             print("hits cleared")
-
+        sleep(0.05)
     cap.release()
     cv.destroyAllWindows()
 
