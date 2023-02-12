@@ -232,7 +232,7 @@ def start_target():
         if keyOrd > 0:
             key = chr(keyOrd)
 
-        if key == 'q':=
+        if key == 'q':
             print(f'{upper_red}')
             print(f'{lower_red}')
 
