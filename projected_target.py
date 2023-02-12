@@ -99,6 +99,55 @@ def start_calibration():
                 save_calibration()
             if key == 'l':
                 load_calibration()
+            if key == 'Y':
+                upper_red[0] = upper_red[0] + 1
+                print(f'{upper_red}')
+                print(f'{lower_red}')
+            if key == 'y':
+                upper_red[0] = upper_red[0] - 1
+                print(f'{upper_red}')
+                print(f'{lower_red}')
+            if key == 'U':
+                upper_red[1] = upper_red[1] + 1
+                print(f'{upper_red}')
+                print(f'{lower_red}')
+            if key == 'u':
+                upper_red[1] = upper_red[1] - 1
+                print(f'{upper_red}')
+                print(f'{lower_red}')
+            if key == 'I':
+                upper_red[2] = upper_red[2] + 1
+                print(f'{upper_red}')
+                print(f'{lower_red}')
+            if key == 'i':
+                upper_red[2] = upper_red[2] - 1
+                print(f'{upper_red}')
+                print(f'{lower_red}')
+            if key == 'H':
+                lower_red[0] = lower_red[0] + 1
+                print(f'{upper_red}')
+                print(f'{lower_red}')
+            if key == 'h':
+                lower_red[0] = lower_red[0] - 1
+                print(f'{upper_red}')
+                print(f'{lower_red}')
+            if key == 'J':
+                lower_red[1] = lower_red[1] + 1
+                print(f'{upper_red}')
+                print(f'{lower_red}')
+            if key == 'j':
+                lower_red[1] = lower_red[1] - 1
+                print(f'{upper_red}')
+                print(f'{lower_red}')
+            if key == 'K':
+                lower_red[2] = lower_red[2] + 1
+                print(f'{upper_red}')
+                print(f'{lower_red}')
+            if key == 'k':
+                lower_red[2] = lower_red[2] - 1
+                print(f'{upper_red}')
+
+                
    
     cv.destroyAllWindows()
     
