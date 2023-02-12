@@ -6,7 +6,7 @@ import time
 import sys
 import yaml
 
-THRESHOLD = 1000
+THRESHOLD = 500
 #create a mask for green colour using inRange function
 
 #read the image
@@ -209,8 +209,8 @@ def start_target():
 #        (minVal, maxVal, minLoc, maxLoc) = cv.minMaxLoc(mask)
         maxLoc = find_center(masked)
         if maxLoc is not None:
-
-            if ( (time.time() - lastHitTime) > 1 )
+            print("Center of mass found")
+            if ( (time.time() - lastHitTime) > 1 ):
                 if (maxLoc not in hits):
                     hits.append(maxLoc)
                     print(maxLoc)
@@ -249,6 +249,7 @@ def start_target():
             break
         if key == 'c':
             hits.clear()
+            update = True
             print("hits cleared")
         time.sleep(0.05)
     cap.release()
