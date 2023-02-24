@@ -5,10 +5,11 @@ import numpy as np
 import time
 import sys
 import yaml
+from FPS import FPS
+from threading import Thread
 
 threshold = 500
 #create a mask for green colour using inRange function
-
 #read the image
 calibration = {}
 calibration["imgzoom"] = 1
@@ -24,14 +25,26 @@ thits = []
 #set the lower and upper bounds for the green hue
 lower_red = np.array([0,95,95])
 upper_red = np.array([10,255,255])
-
+img = None
+ret = None
+running = True
+def capture():
+    global cap
+    global img 
+    global ret
+    global running 
+    while running:
+        ret, img = cap.read()
 def start_calibration():
+    global img
+    global ret 
     multiplier = 1
+    fps = FPS().start()
+    #call at least once before starting loop to ensure we have a valid image before threading
     while True:
         global calibration
         ret, img = cap.read()
-        img = apply_zoom (img) 
-        img = reshape (img) 
+        img = reshape() 
         dimen = img.shape
         height = dimen[0]
         length = dimen[1]
@@ -58,7 +71,9 @@ def start_calibration():
     
 #        cv.setWindowProperty("Calibration", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
         cv.imshow("Calibration",masked)
+        
         keyOrd = cv.waitKey(1)
+        fps.update()
         if keyOrd > 0:
             key = chr(keyOrd)
             if key == 'c':
@@ -148,18 +163,8 @@ def start_calibration():
                 print(f'{upper_red}')
                 print(f'{lower_red}')
 
-        time.sleep(0.05)
-                
-   
-    cv.destroyAllWindows()
-    
-def find_center(img):
-
-    # convert the image to grayscale
-    gray_image = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
- 
-    # convert the grayscale image to binary image
-    ret,thresh = cv.threshold(gray_image,127,255,0)
+    fps.stop()
+    print(f'FPS: {fps.fps()}') 
    
     cv.destroyAllWindows()
     
@@ -184,16 +189,20 @@ def find_center(img):
         return None
     
 def start_target():
-    lastHitTime = time.time()
+    global img
+    global ret 
     global calibration
     global threshold 
+    global running 
+    lastHitTime = time.time()
     update = True
+    fps = FPS().start()
     while True:
 
         # Take each frame
-        ret, frame = cap.read()
-        frame = apply_zoom (frame) 
-        frame = reshape(frame)
+#        ret, frame = cap.read()
+        fps.update()
+        frame = reshape() 
 
         # get dimensions
         dimen = frame.shape
@@ -246,7 +255,7 @@ def start_target():
         if key == 'q':
             print(f'{upper_red}')
             print(f'{lower_red}')
-
+            running = False
             break
         if key == 'c':
             hits.clear()
@@ -258,8 +267,9 @@ def start_target():
         if key == '-':
             threshold = threshold + 10
             print("Sensitivity decreased")
-        time.sleep(0.05)
     cap.release()
+    fps.stop()
+    print(f"FPS: {fps.fps()}")
     cv.destroyAllWindows()
 
 def apply_zoom(img, angle=0, coord=None):
@@ -270,9 +280,13 @@ def apply_zoom(img, angle=0, coord=None):
     result = cv.warpAffine(img, rot_mat, img.shape[1::-1], flags=cv.INTER_LINEAR)
     return result
 
-def reshape(img):
-    
+def reshape():
+    if not running:
+        return
+    global img 
+    global frame
     global calibration
+    img = apply_zoom(img)
     imgWidth = img.shape[1]
     imgHeight = img.shape[0]
     newWidth = int(imgWidth  * calibration["hstretch"])
@@ -297,8 +311,8 @@ def reshape(img):
     if calibration["yshift"] < 0:
         newImg = cv.copyMakeBorder(newImg, abs(calibration["yshift"]), 0, 0, 0, cv.BORDER_CONSTANT)
         newImg = newImg[0:imgHeight, 0:imgWidth]#, 0:imgHeight]
-
     return newImg
+
 def save_calibration():
     global calibration
     with open("calibration_data.yaml", 'w') as caldata:
@@ -309,5 +323,6 @@ def load_calibration():
         calibration = yaml.safe_load(caldata)
     print("Loaded calibration data")
 
+Thread(target=capture, args=()).start()
 start_calibration()
 start_target()
