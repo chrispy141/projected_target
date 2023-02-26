@@ -256,10 +256,10 @@ class ProjectedTarget:
             newImg = newImg[0:imgHeight, 0:imgWidth]#, 0:imgHeight]
         if self.calibration["xshift"] < 0:
             newImg = cv.copyMakeBorder(newImg, 0, 0, 0, abs(self.calibration["xshift"]), cv.BORDER_CONSTANT)
-            newImg = newImg[0:imgHeight, abs(calibration["xshift"]):imgWidth+abs(calibration["xshift"])]#, 0:imgHeight]
+            newImg = newImg[0:imgHeight, abs(self.calibration["xshift"]):imgWidth+abs(self.calibration["xshift"])]#, 0:imgHeight]
         if self.calibration["yshift"] > 0:
             newImg = cv.copyMakeBorder(newImg, 0, abs(self.calibration["yshift"]), 0, 0, cv.BORDER_CONSTANT)
-            newImg = newImg[abs(calibration["yshift"]):imgHeight+abs(calibration["yshift"]), 0:imgWidth]#, 0:imgHeight]
+            newImg = newImg[abs(self.calibration["yshift"]):imgHeight+abs(self.calibration["yshift"]), 0:imgWidth]#, 0:imgHeight]
         if self.calibration["yshift"] < 0:
             newImg = cv.copyMakeBorder(newImg, abs(self.calibration["yshift"]), 0, 0, 0, cv.BORDER_CONSTANT)
             newImg = newImg[0:imgHeight, 0:imgWidth]#, 0:imgHeight]
