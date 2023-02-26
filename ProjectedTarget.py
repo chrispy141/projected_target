@@ -37,7 +37,8 @@ class ProjectedTarget:
     def capture(self):
         print("Capture started")
         lastHitTime = time.time()
-        fpsCounter = FPS().start()
+        fpsCounter = FPS()
+        fpsCounter.start()
         self.cap = cv.VideoCapture(self.camNum)
         while self.running:
             fpsCounter.update()
