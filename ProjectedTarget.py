@@ -25,6 +25,7 @@ class ProjectedTarget:
         self.height = 0
         self.length = 0
         self.center = None
+        self.fps = 0
 
         #set the lower and upper bounds for the green hue
         self.lower_red = np.array([0,95,95])
@@ -35,15 +36,15 @@ class ProjectedTarget:
     def capture(self):
         print("Capture started")
         lastHitTime = time.time()
-        fps = FPS().start()
+        fpsCounter = FPS().start()
         self.cap = cv.VideoCapture(self.camNum)
         while self.running:
-            fps.update()
+            fpsCounter.update()
             ret, img = self.cap.read()
             #Do all processing here
             self.process(img) 
+            self.fps = fpsCounter.fps()
         self.cap.release()
-        print(f"FPS: {fps.fps()}")
 
     def start_calibration(self):
         multiplier = 1
@@ -230,6 +231,7 @@ class ProjectedTarget:
                 threshold = threshold + 10
                 print("Sensitivity decreased")
         cv.destroyAllWindows()
+        print(f"FPS: {self.fps}")
     
     def apply_zoom(self, img, angle=0, coord=None):
         cy, cx = [ i/2 for i in img.shape[:-1] ] if coord is None else coord[::-1]
