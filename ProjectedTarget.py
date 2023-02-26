@@ -43,11 +43,13 @@ class ProjectedTarget:
             #Do all processing here
             self.process(img) 
         self.cap.release()
+        print(f"FPS: {fps.fps()}")
 
     def start_calibration(self):
         multiplier = 1
         self.cap = cv.VideoCapture(self.camNum)
         #call at least once before starting loop to ensure we have a valid image before threading
+        self.load_calibration() 
         while True:
             ret, img = self.cap.read()
             img = self.reshape(img) 
@@ -164,6 +166,7 @@ class ProjectedTarget:
             return None
     def process(self, frame):
         if not self.running:
+            print("Not running, abort processing")
             return
         # Take each frame
         frame = self.reshape(frame) 
@@ -270,9 +273,10 @@ class ProjectedTarget:
             yaml.dump(self.calibration, caldata)
 
     def load_calibration(self):
-        with open("calibration_data.yaml", 'r') as caldata:
-            self.calibration = yaml.safe_load(caldata)
-        print("Loaded calibration data")
+        if os.path.exists("calibration_data.yaml"):
+            with open("calibration_data.yaml", 'r') as caldata:
+                self.calibration = yaml.safe_load(caldata)
+            print("Loaded calibration data")
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
