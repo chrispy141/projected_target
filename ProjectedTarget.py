@@ -41,11 +41,13 @@ class ProjectedTarget:
         fpsCounter.start()
         self.cap = cv.VideoCapture(self.camNum)
         while self.running:
-            fpsCounter.update()
             ret, img = self.cap.read()
             #Do all processing here
             self.process(img) 
             self.fps = fpsCounter.fps()
+            fpsCounter.update()
+        fpsCounter.stop()
+        print(f"Capture Loop FPS [{fpsCounter.fps()}")
         self.cap.release()
 
     def start_calibration(self):
