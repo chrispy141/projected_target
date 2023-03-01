@@ -27,6 +27,7 @@ class ProjectedTarget:
         self.length = 0
         self.center = None
         self.fps = 0
+        self.cap = cv.VideoCapture(self.camNum)
 
         #set the lower and upper bounds for the green hue
         self.lower_red = np.array([0,95,95])
@@ -34,25 +35,33 @@ class ProjectedTarget:
         self.running = True
         self.lastHitTime = time.time()
         self.hitslock = Lock()
+        self.runninglock = Lock()
+
     def capture(self):
         print("Capture started")
         lastHitTime = time.time()
         fpsCounter = FPS()
         fpsCounter.start()
-        self.cap = cv.VideoCapture(self.camNum)
-        while self.running:
+        self.runninglock.acquire()
+        self.running = True
+        self.runninglock.release()
+        print("before loop")
+        while True:
+            self.runninglock.acquire()
+            if not self.running:
+                break
+            self.runninglock.release()
             ret, img = self.cap.read()
-            #Do all processing here
-            self.process(img) 
-            self.fps = fpsCounter.fps()
             fpsCounter.update()
+            #Do all processing here
+#            self.process(img) 
+        print("Out of loop now")
         fpsCounter.stop()
-        print(f"Capture Loop FPS [{fpsCounter.fps()}")
+        print(f"Capture Loop FPS [{fpsCounter.fps()}]")
         self.cap.release()
 
     def start_calibration(self):
         multiplier = 1
-        self.cap = cv.VideoCapture(self.camNum)
         #call at least once before starting loop to ensure we have a valid image before threading
         self.load_calibration() 
         while True:
@@ -147,8 +156,6 @@ class ProjectedTarget:
                 if key == 'k':
                     self.lower_red[2] = self.lower_red[2] - 1
         cv.destroyAllWindows()
-        time.sleep(1)
-        print("calibration destroyed?")
         
     def find_center(self, img):
     
@@ -170,9 +177,14 @@ class ProjectedTarget:
         else:
             return None
     def process(self, frame):
+        self.runninglock.acquire()
+        abort = False
         if not self.running:
             print("Not running, abort processing")
-            return
+            abort = True
+        self.runninglock.release()
+        if abort:
+            return 
         # Take each frame
         frame = self.reshape(frame) 
         dimen = frame.shape
@@ -222,7 +234,9 @@ class ProjectedTarget:
                 key = chr(keyOrd)
     
             if key == 'q':
+                self.runninglock.acquire()
                 self.running = False
+                self.runninglock.release()
                 break
             if key == 'c':
                 self.hits.clear()
@@ -235,7 +249,7 @@ class ProjectedTarget:
                 threshold = threshold + 10
                 print("Sensitivity decreased")
         cv.destroyAllWindows()
-        print(f"FPS: {self.fps}")
+        captureThread.join()
     
     def apply_zoom(self, img, angle=0, coord=None):
         cy, cx = [ i/2 for i in img.shape[:-1] ] if coord is None else coord[::-1]
@@ -245,8 +259,10 @@ class ProjectedTarget:
         return result
     
     def reshape(self, frame):
+        self.runninglock.acquire()
         if not self.running:
             return
+        self.runninglock.release()
         img = self.apply_zoom(frame)
         imgWidth = img.shape[1]
         imgHeight = img.shape[0]
@@ -292,7 +308,5 @@ if __name__ == "__main__":
     print(f"Cam Num: {camNum}")
     target = ProjectedTarget(camNum)
     target.start_calibration()    
-    time.sleep(1) 
-    print("cal complete, slept, starting") 
     target.start()
             
